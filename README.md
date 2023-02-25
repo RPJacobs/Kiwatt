@@ -77,8 +77,11 @@ My script can now:
 # Installation
 
 pip install pysolarmanv5
+
 pip install entsoe-py
+
 pip install beautifulsoup4
+
 
 [My File](../master/entso.py)
 
