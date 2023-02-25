@@ -4,15 +4,12 @@ import datetime
 import pandas as pd
 import bs4
 import requests
+import json
 
-APIKEY_ENTSOE = ''
-KIWATT_IP = "x.x.x.x"
-KIWATT_SN = 2713xxxxxx
-KIWATT_PORT = 8899
-TELEGRAM_BOT_ID = ""
-TELEGRAM_CHAN_ID = "";
+with open("config.json") as json_data_file:
+    cfg = json.load(json_data_file)
 
-client = EntsoeRawClient(api_key=APIKEY_ENTSOE)
+client = EntsoeRawClient(api_key=cfg["entsoe"]["key"])
 
 now = int(datetime.datetime.now().strftime("%Y%m%d"))
 start = pd.Timestamp(str(now+1), tz='Europe/Amsterdam')
@@ -63,7 +60,7 @@ if count < 6:
         loads.append(10)
 
 modbus = PySolarmanV5(
-    KIWATT_IP, KIWATT_SN, port=KIWATT_PORT, mb_slave_id=1, verbose=0
+    cfg["kiwatt"]["ip"], cfg["kiwatt"]["sn"], port=cfg["kiwatt"]["port"], mb_slave_id=1, verbose=0
 )
 
 
@@ -74,7 +71,7 @@ modbus.write_multiple_holding_registers(register_addr=166, values=loads)
 """set loadPoints"""
 modbus.write_multiple_holding_registers(register_addr=172, values=loadPoints)
 
-requests.post('https://api.telegram.org/bot'+TELEGRAM_BOT_ID+'/sendMessage?chat_id='+TELEGRAM_CHAN_ID+'&text=Batterij ingesteld: \n'+str(setPoints)+'\n'+str(loadPoints)+'\n'+str(loads))
+requests.post('https://api.telegram.org/bot'+cfg["telegram"]["botID"]+'/sendMessage?chat_id='+cfg["telegram"]["chatID"]+'&text=Batterij ingesteld: \n'+str(setPoints)+'\n'+str(loadPoints)+'\n'+str(loads))
 """check battery
 print(modbus.read_holding_registers(register_addr=148, quantity=6))
 print(modbus.read_holding_registers(register_addr=166, quantity=6))

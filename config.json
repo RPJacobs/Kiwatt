@@ -1,0 +1,14 @@
+{
+    "entsoe":{
+        "key":""
+    },
+    "kiwatt":{
+        "ip":"x.x.x.x",
+        "sn":2713xxxxx,
+        "port":8899
+    },
+    "telegram":{
+        "botID":"",
+        "chatID":""
+    }
+}
