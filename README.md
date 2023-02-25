@@ -74,6 +74,12 @@ My script can now:
   2. find the lowest prices (3 hours to load all 20kWh)
   3. programm the inverter to load from grid.
   
+# Installation
+
+pip install pysolarmanv5
+pip install entsoe-py
+pip install beautifulsoup4
+
 [My File](../master/entso.py)
 
 Used a cronjob to load the script @23:00 and telegram to send me an update...
