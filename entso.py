@@ -12,8 +12,14 @@ with open("config.json") as json_data_file:
 client = EntsoeRawClient(api_key=cfg["entsoe"]["key"])
 
 now = int(datetime.datetime.now().strftime("%Y%m%d"))
-start = pd.Timestamp(str(now+1), tz='Europe/Amsterdam')
-end = pd.Timestamp(str(now+2), tz='Europe/Amsterdam')
+
+if int(datetime.datetime.now().strftime("%H")) > 23:
+    start = pd.Timestamp(str(now+1), tz='Europe/Amsterdam')
+    end = pd.Timestamp(str(now+2), tz='Europe/Amsterdam')
+else:
+    start = pd.Timestamp(str(now), tz='Europe/Amsterdam')
+    end = pd.Timestamp(str(now+1), tz='Europe/Amsterdam')
+
 country_code = 'NL'  # Netherlands
 
 ts = client.query_day_ahead_prices(country_code, start=start, end=end)
@@ -62,7 +68,6 @@ if count < 6:
 modbus = PySolarmanV5(
     cfg["kiwatt"]["ip"], cfg["kiwatt"]["sn"], port=cfg["kiwatt"]["port"], mb_slave_id=1, verbose=0
 )
-
 
 """set time 1"""
 modbus.write_multiple_holding_registers(register_addr=148, values=setPoints)
