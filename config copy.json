@@ -1,0 +1,26 @@
+{
+    "entsoe":{
+        "key":"",        
+        "tz":"Europe/Amsterdam",
+        "country":"NL"
+    },
+    "forecast.solar":{
+        "lat" : ":lat - latitude of location, -90 (south) … 90 (north); handeled with a precission of 0.0001 or abt. 10 m", 
+        "long" : ":lon - longitude of location, -180 (west) … 180 (east); handeled with a precission of 0.0001 or abt. 10 m",
+        "dec" : ":dec - plane declination, 0 (horizontal) … 90 (vertical); integer",
+        "az" : ":az - plane azimuth, -180 … 180 (-180 = north, -90 = east, 0 = south, 90 = west, 180 = north); integer",
+        "kwp" : ":kwp - installed modules power in kilo watt; float"
+    },
+    "kiwatt":{
+        "ip":"x.x.x.x",
+        "sn":"2713xxxxx",
+        "port":8899,
+        "max_percload" : 90,
+        "min_percload" : 10,
+        "unload_perc_hour" : 4
+    },
+    "telegram":{
+        "botID":"",
+        "chatID":""
+    }
+}
