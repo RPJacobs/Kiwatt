@@ -47,10 +47,11 @@ if low1 > minLoadTime:
     loads.append(10)
 
 
-#current load capacity of battery
+#current capacity (kWh) of battery
 batLoad = (perc[0])*20/100
-#loaded needed totday until 18:00
-loadToday = 18 - int(datetime.datetime.now().strftime("%H")) * 0.6
+#load needed today until 18:00
+loadToday = (18 - hourNow) * 0.6
+
 #max load capacity of battery (kWh)
 maxload = float(modbus.read_holding_registers(register_addr=108, quantity=1)[0]) * 50 / 1000
 
@@ -65,7 +66,7 @@ for setpoint in low:
     #get position of setpoint in ranking (cheapest first)
     rank = ranking.index(setpoint)
     #calculate kWh needed to load battery to max_percload
-    toLoad = 20*cfg["kiwatt"]["max_percload"]/100-(batLoad + productionToday + calcLoad)
+    toLoad = 20*cfg["kiwatt"]["max_percload"]/100-(batLoad + productionToday - loadToday  + calcLoad)
     #calc hours to correct based on ranking and cheapest price
     correct = 0
     if(rank-count >= 0):
