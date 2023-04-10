@@ -1,5 +1,5 @@
 # Kiwatt
-# Auto loading KIWATT inverter 10,0kW with ANWB Energie Dynamic Contract | lowest prices ENTSO-e (API)
+# Auto loading KIWATT inverter 10,0kW with ANWB Energie Dynamic Contract | lowest prices ENTSO-e (API) |  forcast.solar to forcast production today
 
 I've installed a Kiwatt inverter and two 10kWh batteries:
 
