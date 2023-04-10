@@ -12,6 +12,10 @@ priceHour = get_hour_prices(cfg)
 productionToday = get_forecast(cfg)
 
 modbus = PySolarmanV5(cfg["kiwatt"]["ip"], cfg["kiwatt"]["sn"], port=cfg["kiwatt"]["port"], mb_slave_id=1, verbose=0)
+#get battery capacity (kWh)
+batt_capacity = modbus.read_holding_registers(register_addr=102, quantity=1)[0]*50/1000
+#sell_mode_time_point = modbus.read_holding_registers(register_addr=154, quantity=6)
+
 perc = modbus.read_holding_registers(register_addr=588, quantity=1)
 
 low1 = min(priceHour, key=priceHour.get)
@@ -23,7 +27,7 @@ priceHour.pop(low3)
 ranking = [low1, low2, low3]
 low = sorted(ranking)
 
-hourNow = int(datetime.datetime.now().strftime("%H"))+1
+hourNow = int(datetime.datetime.now().strftime("%H"))
 #how long to battery is empty
 minLoadTime = math.floor((perc[0]-10) / cfg["kiwatt"]["unload_perc_hour"]) + hourNow
 
@@ -48,9 +52,9 @@ if low1 > minLoadTime:
 
 
 #current capacity (kWh) of battery
-batLoad = (perc[0])*20/100
+batLoad = perc[0]*batt_capacity/100
 #load needed today until 18:00
-loadToday = (18 - hourNow) * 0.6
+loadToday = (18 - hourNow) * batt_capacity * cfg["kiwatt"]["unload_perc_hour"] / 100
 
 #max load capacity of battery (kWh)
 maxload = float(modbus.read_holding_registers(register_addr=108, quantity=1)[0]) * 50 / 1000
@@ -66,7 +70,7 @@ for setpoint in low:
     #get position of setpoint in ranking (cheapest first)
     rank = ranking.index(setpoint)
     #calculate kWh needed to load battery to max_percload
-    toLoad = 20*cfg["kiwatt"]["max_percload"]/100-(batLoad + productionToday - loadToday  + calcLoad)
+    toLoad = batt_capacity*cfg["kiwatt"]["max_percload"]/100-(batLoad + productionToday - loadToday  + calcLoad)
     #calc hours to correct based on ranking and cheapest price
     correct = 0
     if(rank-count >= 0):
@@ -77,10 +81,14 @@ for setpoint in low:
         loadHours = 0
     else:
         #round up to full hour
+
         if(loadHours > 1 ):
             loadHours = 1
+
         #calculate load percentage this hour
-        loadPerc = int(round(perc[0]+(((loadHours*maxload)+calcLoad)/0.2), 0))
+        loadPerc = int(round(perc[0]+(((loadHours*maxload)+calcLoad)/(batt_capacity/100)), 0))
+        if(loadPerc > cfg["kiwatt"]["max_percload"]):
+            loadPerc = cfg["kiwatt"]["max_percload"]
         #add load to calculated load for next hour
         calcLoad += loadHours*maxload
         #check if setpoint is already in list
