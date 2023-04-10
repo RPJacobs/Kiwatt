@@ -1,2 +1,3 @@
 config.json
 forecast.json
+/__pycache__/*
