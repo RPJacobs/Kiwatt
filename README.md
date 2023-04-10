@@ -73,7 +73,12 @@ My script can now:
   1. Download an XML with day_ahead_prices.
   2. find the lowest prices (3 hours to load all 20kWh)
   3. programm the inverter to load from grid.
-  
+ 
+# update 10 April 2023
+  Added PV functions
+  1. calculate battery load based on forcast.solar forcast production today
+  2. check if battery needs to load before first cheapest loadpoint, find cheapest point before battery is empty
+
 # Installation
 
 pip install pysolarmanv5
@@ -82,9 +87,8 @@ pip install entsoe-py
 
 pip install beautifulsoup4
 
+copy config copy.json to config.json (set your data)
 
 [My File](../master/entso.py)
 
-Used a cronjob to load the script @23:00 and telegram to send me an update...
-
-TO DO: optimise load window.
+Used a cronjob to load the script @xx:59 and telegram to send me an update...
