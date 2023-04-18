@@ -9,7 +9,8 @@ with open("config.json") as json_data_file:
     cfg = json.load(json_data_file)
 
 priceHour = get_hour_prices(cfg)
-productionToday = get_forecast(cfg)
+production_start, productionToday = get_forecast(cfg)
+
 
 modbus = PySolarmanV5(cfg["kiwatt"]["ip"], cfg["kiwatt"]["sn"], port=cfg["kiwatt"]["port"], mb_slave_id=1, verbose=0)
 #get battery capacity (kWh)
@@ -17,35 +18,54 @@ batt_capacity = modbus.read_holding_registers(register_addr=102, quantity=1)[0]*
 #sell_mode_time_point = modbus.read_holding_registers(register_addr=154, quantity=6)
 
 perc = modbus.read_holding_registers(register_addr=588, quantity=1)
+hourNow = int(datetime.datetime.now().strftime("%H"))+1
 
+ranking = []
 low1 = min(priceHour, key=priceHour.get)
 priceHour.pop(low1)
 low2 = min(priceHour, key=priceHour.get)
 priceHour.pop(low2)
 low3 = min(priceHour, key=priceHour.get)
 priceHour.pop(low3)
-ranking = [low1, low2, low3]
+if(low1 >= hourNow):
+   ranking.append(low1)
+if(low2 >= hourNow):
+   ranking.append(low2)
+if(low3 >= hourNow):
+   ranking.append(low3)
 low = sorted(ranking)
 
-hourNow = int(datetime.datetime.now().strftime("%H"))
-#how long to battery is empty
-minLoadTime = math.floor((perc[0]-10) / cfg["kiwatt"]["unload_perc_hour"]) + hourNow
 
+#how long to battery is empty
+batt_empty = math.floor((perc[0]-10) / cfg["kiwatt"]["unload_perc_hour"]) + hourNow
+
+#check if there is any solar production
+if production_start == 0:
+    production_start = batt_empty
+
+#setpoints hour*100 + minute
 setPoints = []
+#loadpoints 0=off 1=on
 loadPoints = []
+#load percentage
 loads = []
 
-#check if battery is empty before first loadpoint
-if low1 > minLoadTime:
+# check if first loadpoint is after batt_empty and 
+# production starts after batt_empty 
+# low1 = 14/ batt_empty = 10
+if low[0] > batt_empty and production_start >= batt_empty:
+    requests.post('https://api.telegram.org/bot'+cfg["telegram"]["botID"]+'/sendMessage?chat_id='+cfg["telegram"]["chatID"]+'&text=Low ('+str(low[0])+') before batt_empty ('+str(batt_empty)+')')
     loadpoint = 99
-    #find lowest loadpoint before minLoadTime
-    while loadpoint > minLoadTime:
+    #find lowest loadpoint before batt_empty
+    while loadpoint > batt_empty:
         loadpoint = min(priceHour, key=priceHour.get)
         priceHour.pop(loadpoint)
     #add loadpoint to list
+    requests.post('https://api.telegram.org/bot'+cfg["telegram"]["botID"]+'/sendMessage?chat_id='+cfg["telegram"]["chatID"]+'&text=lowest loadpoint ('+str(loadpoint)+') needs additional load ('+str((batt_empty-loadpoint)*cfg["kiwatt"]["unload_perc_hour"]+10)+')')
+
     setPoints.append(loadpoint*100)
     loadPoints.append(1)
-    loads.append((low1-loadpoint)*4+10)
+    loads.append((batt_empty-loadpoint)*cfg["kiwatt"]["unload_perc_hour"]+10)
     setPoints.append((loadpoint+1)*100)
     loadPoints.append(0)
     loads.append(10)
@@ -71,6 +91,8 @@ for setpoint in low:
     rank = ranking.index(setpoint)
     #calculate kWh needed to load battery to max_percload
     toLoad = batt_capacity*cfg["kiwatt"]["max_percload"]/100-(batLoad + productionToday - loadToday  + calcLoad)
+    requests.post('https://api.telegram.org/bot'+cfg["telegram"]["botID"]+'/sendMessage?chat_id='+cfg["telegram"]["chatID"]+'&text=toLoad ('+str(toLoad)+') = batLoad ('+str(batLoad)+'kWh) + productionToday ('+str(productionToday)+'kWh) - loadToday ('+str(loadToday)+'kWh) - calcLoad ('+str(calcLoad)+'kWh)')
+
     #calc hours to correct based on ranking and cheapest price
     correct = 0
     if(rank-count >= 0):
@@ -81,7 +103,6 @@ for setpoint in low:
         loadHours = 0
     else:
         #round up to full hour
-
         if(loadHours > 1 ):
             loadHours = 1
 

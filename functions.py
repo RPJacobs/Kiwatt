@@ -16,26 +16,38 @@ def get_forecast(cfg):
 
     #check if we get a result
     if estimate['result'] == None:
+        requests.post('https://api.telegram.org/bot'+cfg["telegram"]["botID"]+'/sendMessage?chat_id='+cfg["telegram"]["chatID"]+'&text=No result from forecast.solar')
         #no result, get forcast from file
         f = open('forecast.json')
         estimate = json.load(f)
         f.close()
     else:
         #save forecast to file
-        with open("forecast.json", "w") as outfile:
-            outfile.write(json.dumps(estimate))
+        try:
+            with open("forecast.json", 'w+') as file:
+                try:
+                    file.write(json.dumps(estimate))
+                except (IOError, OSError):
+                    print("Error writing to file")
+        except (FileNotFoundError, PermissionError, OSError):
+            text = "Error opening file"
+            requests.post('https://api.telegram.org/bot'+cfg["telegram"]["botID"]+'/sendMessage?chat_id='+cfg["telegram"]["chatID"]+'&text='+text)
+
 
     now = datetime.datetime.now()
     tomorrow = (datetime.datetime.now()+ datetime.timedelta(days=1, hours=0)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     #calculate total forcast production for today from now till 24:00
+    production_start = 0
     to_produce = 0
     for hour in estimate['result']['watt_hours_period']:
         hour_time_obj = datetime.datetime.strptime(hour, '%Y-%m-%d %H:%M:%S')
         if(hour_time_obj > now and hour_time_obj < tomorrow):
+            if(estimate['result']['watt_hours_period'][hour] > 1000 and production_start == 0):
+                production_start = hour_time_obj.strftime('%-H')
             to_produce = to_produce + estimate['result']['watt_hours_period'][hour]/1000
-
-    return to_produce
+    
+    return int(production_start), to_produce
 
 def get_hour_prices(cfg):
     #connect to entsoe
