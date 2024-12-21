@@ -22,5 +22,9 @@
     "telegram":{
         "botID":"",
         "chatID":""
+    },
+    "homeassistant":{
+        "token": "token",
+        "url": "http://x.x.x.x:8123/api/"
     }
 }
